@@ -3,28 +3,30 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
-  const [isRegistering, setIsRegistering] = useState(false); // State to toggle views
+  const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Engineer"); // Default role selection
+  const [role, setRole] = useState("Engineer");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 👇 THIS IS YOUR LIVE BACKEND URL
+  const API_URL = "https://buildflow-jnwy54pa.b4a.run";
 
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     const endpoint = isRegistering ? "register" : "login";
     
-    // Payload includes role and name during registration
     const payload = isRegistering 
       ? { name, email, password, role } 
       : { email, password };
       
     try {
-      const res = await axios.post(`http://localhost:5000/auth/${endpoint}`, payload);
+      // ✅ CHANGED: Now using the live Back4App URL instead of localhost
+      const res = await axios.post(`${API_URL}/auth/${endpoint}`, payload);
 
-      // If success, save the user info (including role) and navigate
       alert(`${isRegistering ? "Registration" : "Login"} Successful!`);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user)); 
@@ -46,7 +48,6 @@ function Login() {
         <h2 style={styles.title}>{formTitle}</h2>
         <form onSubmit={handleAuth}>
 
-          {/* Full Name field - Only visible during Registration */}
           {isRegistering && (
             <div style={styles.inputGroup}>
               <label style={styles.label}>Full Name:</label>
@@ -59,8 +60,7 @@ function Login() {
               />
             </div>
           )}
-
-          {/* Email Field */}
+          
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email:</label>
             <input 
@@ -72,7 +72,6 @@ function Login() {
             />
           </div>
 
-          {/* Password Field */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Password:</label>
             <input 
@@ -84,7 +83,6 @@ function Login() {
             />
           </div>
           
-          {/* ROLE SELECTOR - Only visible during Registration */}
           {isRegistering && (
             <div style={styles.inputGroup}>
               <label style={styles.label}>Select Role:</label>
@@ -101,18 +99,15 @@ function Login() {
             </div>
           )}
 
-          {/* SUBMIT BUTTON */}
           <button type="submit" disabled={loading} style={styles.button}>
             {loading ? "Processing..." : buttonText}
           </button>
         </form>
 
-        {/* --- REGISTER/LOGIN SWITCH --- */}
         <div style={styles.switch}>
           <span style={styles.switchText}>
             {isRegistering ? "Already have an account?" : "Need an account?"}
           </span>
-          {/* Button that toggles the isRegistering state */}
           <button onClick={() => setIsRegistering(!isRegistering)} style={styles.switchButton}>
             {isRegistering ? "Login" : "Register"}
           </button>
@@ -128,7 +123,7 @@ const styles = {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        backgroundColor: '#F4F6F7', // Cool Gray
+        backgroundColor: '#F4F6F7',
         fontFamily: 'Arial, sans-serif'
     },
     card: {
@@ -141,7 +136,7 @@ const styles = {
         textAlign: 'center'
     },
     title: {
-        color: '#0A1A2F', // Primary Navy
+        color: '#0A1A2F',
         marginBottom: '25px',
         fontSize: '24px'
     },
@@ -153,7 +148,7 @@ const styles = {
         display: 'block',
         marginBottom: '5px',
         fontWeight: 'bold',
-        color: '#1C1C1E' // Dark Text
+        color: '#1C1C1E'
     },
     input: {
         width: '100%',
@@ -166,7 +161,7 @@ const styles = {
     button: {
         width: '100%',
         padding: '12px',
-        backgroundColor: '#0E7C86', // Secondary Teal
+        backgroundColor: '#0E7C86',
         color: 'white',
         border: 'none',
         borderRadius: '5px',
@@ -181,12 +176,12 @@ const styles = {
         paddingTop: '15px'
     },
     switchText: {
-        color: '#A0A4A8', // Light Text
+        color: '#A0A4A8',
         marginRight: '10px'
     },
     switchButton: {
         backgroundColor: 'transparent',
-        color: '#E74C3C', // Accent/Action color
+        color: '#E74C3C',
         border: 'none',
         cursor: 'pointer',
         fontWeight: 'bold',

@@ -15,6 +15,13 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => {
     console.log("✅ MongoDB Connected Successfully");
     
+    // 👇 ADDED THIS: Homepage Route 👇
+    // This makes the "Cannot GET /" error go away and shows a nice message instead
+    app.get('/', (req, res) => {
+        res.send("Backend is running successfully! 🚀");
+    });
+    // 👆 END OF NEW CODE 👆
+
     // STEP 4: Start the server ONLY AFTER the DB is connected
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);

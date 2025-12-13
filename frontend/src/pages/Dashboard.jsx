@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 
-// --- ICONS (Using simple text for now to avoid extra installs, can be replaced with real icons) ---
+// --- ICONS ---
 const Icons = {
   Tasks: "✅",
   Docs: "📄",
@@ -19,6 +19,9 @@ const Icons = {
 };
 
 function Dashboard() {
+  // --- LIVE BACKEND URL ---
+  const API_URL = "https://buildflow-jnwy54pa.b4a.run";
+
   // --- STATE ---
   const [activeTab, setActiveTab] = useState("tasks");
   const [loading, setLoading] = useState(false);
@@ -66,14 +69,16 @@ function Dashboard() {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/tasks");
+      // ✅ UPDATED URL
+      const res = await axios.get(`${API_URL}/tasks`);
       setTasks(res.data.tasks);
     } catch (err) { console.error(err); }
   };
 
   const fetchDocuments = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/documents?role=${user.role}`);
+      // ✅ UPDATED URL
+      const res = await axios.get(`${API_URL}/documents?role=${user.role}`);
       setDocuments(res.data.documents);
     } catch (err) { console.error(err); }
   };
@@ -89,7 +94,8 @@ function Dashboard() {
     e.preventDefault();
     if (!newTaskDesc) return;
     try {
-      const res = await axios.post("http://localhost:5000/tasks", { description: newTaskDesc });
+      // ✅ UPDATED URL
+      const res = await axios.post(`${API_URL}/tasks`, { description: newTaskDesc });
       setTasks([res.data.task, ...tasks]);
       setNewTaskDesc("");
     } catch (err) { alert("Failed to create task."); }
@@ -97,7 +103,8 @@ function Dashboard() {
 
   const handleUpdateTaskStatus = async (id, newStatus) => {
     try {
-      const res = await axios.put(`http://localhost:5000/tasks/${id}`, { status: newStatus });
+      // ✅ UPDATED URL
+      const res = await axios.put(`${API_URL}/tasks/${id}`, { status: newStatus });
       setTasks(tasks.map(t => (t._id === id ? res.data.task : t)));
     } catch (err) { alert("Failed to update task."); }
   };
@@ -110,7 +117,8 @@ function Dashboard() {
   const handleRequestDeleteSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`http://localhost:5000/tasks/request-delete/${deleteTaskId}`, { reason: deleteReason });
+      // ✅ UPDATED URL
+      const res = await axios.post(`${API_URL}/tasks/request-delete/${deleteTaskId}`, { reason: deleteReason });
       setTasks(tasks.map(t => (t._id === deleteTaskId ? res.data.task : t)));
       alert("Request submitted.");
     } catch (err) { alert("Failed to request deletion."); } 
@@ -120,7 +128,8 @@ function Dashboard() {
   const handleManagerAction = async (taskId, action) => {
     if (!window.confirm(`Are you sure?`)) return;
     try {
-      await axios.put(`http://localhost:5000/tasks/manager-action/${taskId}`, { action });
+      // ✅ UPDATED URL
+      await axios.put(`${API_URL}/tasks/manager-action/${taskId}`, { action });
       if (action === 'approve') setTasks(tasks.filter(t => t._id !== taskId));
       else fetchTasks();
     } catch (err) { alert("Action failed."); }
@@ -131,7 +140,8 @@ function Dashboard() {
     if (!appPrompt) return alert("Enter prompt!");
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/applications/generate", {
+      // ✅ UPDATED URL
+      const res = await axios.post(`${API_URL}/applications/generate`, {
         userName: user.name, letterType: appType, prompt: appPrompt
       }, { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -148,7 +158,8 @@ function Dashboard() {
     if (!inputText) return alert("Enter text!");
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/summary", { text: inputText });
+      // ✅ UPDATED URL
+      const res = await axios.post(`${API_URL}/summary`, { text: inputText });
       setSummary(res.data.summary);
     } catch (err) { alert("Summary failed."); }
     setLoading(false);
@@ -158,7 +169,8 @@ function Dashboard() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("http://localhost:5000/email/send", { to: emailTo, subject: emailSubject, body: emailBody });
+      // ✅ UPDATED URL
+      await axios.post(`${API_URL}/email/send`, { to: emailTo, subject: emailSubject, body: emailBody });
       alert("Email Sent!");
       setEmailTo(""); setEmailSubject(""); setEmailBody("");
     } catch (err) { alert("Email failed."); }
@@ -174,7 +186,8 @@ function Dashboard() {
     formData.append("role", user.role);
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/documents/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
+      // ✅ UPDATED URL
+      const res = await axios.post(`${API_URL}/documents/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } });
       setDocuments([res.data.document, ...documents]);
       alert("Uploaded!");
       setFile(null);
@@ -185,7 +198,8 @@ function Dashboard() {
   const handleFileDelete = async (id) => {
     if (!window.confirm("Delete file?")) return;
     try {
-      await axios.delete(`http://localhost:5000/documents/${id}`);
+      // ✅ UPDATED URL
+      await axios.delete(`${API_URL}/documents/${id}`);
       setDocuments(documents.filter(d => d._id !== id));
     } catch (err) { alert("Delete failed."); }
   };
@@ -350,7 +364,8 @@ function Dashboard() {
                   {documents.map(doc => (
                     <div key={doc._id} style={styles.listItem}>
                       <div>
-                        <a href={`http://localhost:5000${doc.filePath}`} target="_blank" rel="noreferrer" style={styles.link}>{Icons.Docs} {doc.fileName}</a>
+                        {/* ✅ UPDATED URL for File Downloads */}
+                        <a href={`${API_URL}${doc.filePath}`} target="_blank" rel="noreferrer" style={styles.link}>{Icons.Docs} {doc.fileName}</a>
                         <div style={styles.metaText}>By {doc.uploadedBy} • {new Date(doc.createdAt).toLocaleDateString()}</div>
                       </div>
                       <button onClick={() => handleFileDelete(doc._id)} style={styles.btnDangerSmall}>{Icons.Delete}</button>
@@ -394,7 +409,7 @@ const styles = {
   navLeft: { display: 'flex', alignItems: 'center', gap: '15px' },
   navRight: { display: 'flex', alignItems: 'center', gap: '15px' },
   logo: { fontSize: '1.2rem', fontWeight: 'bold', margin: 0 },
-  mobileMenuBtn: { background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'none' }, // Shown via media query logic below (handled in JS for simplicity in React)
+  mobileMenuBtn: { background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'none' }, 
   roleBadge: { background: '#334155', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', marginLeft: '5px' },
   btnLogout: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' },
   userInfo: { fontSize: '0.9rem', display: 'flex', alignItems: 'center' },
@@ -404,7 +419,7 @@ const styles = {
   
   // Sidebar
   sidebar: { width: '260px', background: '#fff', borderRight: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', transition: 'transform 0.3s ease' },
-  sidebarOpen: { transform: 'translateX(0)' }, // Used for mobile toggle
+  sidebarOpen: { transform: 'translateX(0)' }, 
   menu: { display: 'flex', flexDirection: 'column', gap: '5px' },
   menuBtn: { padding: '12px 15px', border: 'none', background: 'transparent', color: '#64748b', textAlign: 'left', cursor: 'pointer', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', fontWeight: '500', transition: 'all 0.2s' },
   menuBtnActive: { background: '#e0f2fe', color: '#0284c7' },
@@ -459,15 +474,15 @@ const styles = {
   modalButtons: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' },
 };
 
-// --- RESPONSIVE CSS (Injected style tag for media queries that inline styles can't handle well) ---
+// --- RESPONSIVE CSS ---
 const styleTag = document.createElement("style");
 styleTag.innerHTML = `
   @media (max-width: 768px) {
     aside { position: fixed; height: 100%; z-index: 40; transform: translateX(-100%); }
     aside[style*="translateX(0)"] { transform: translateX(0) !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
-    button[style*="display: none"] { display: block !important; } /* Show hamburger */
+    button[style*="display: none"] { display: block !important; }
     main { padding: 10px !important; }
-    div[style*="padding: 30px"] { padding: 15px !important; } /* Compact card padding */
+    div[style*="padding: 30px"] { padding: 15px !important; }
     .mobile-visible { display: block !important; }
   }
   @media (min-width: 769px) {
