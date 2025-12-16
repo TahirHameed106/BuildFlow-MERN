@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard"; 
+import Register from "./pages/Register"; // ✅ 1. Import the Register Page
 
 function App() {
   return (
-    // This <Router> wrapper is necessary to make useNavigate() and <Route> work!
     <Router>
       <Routes>
         {/* Default route: Go to Login */}
@@ -12,8 +12,11 @@ function App() {
         
         {/* Login Page */}
         <Route path="/login" element={<Login />} />
+
+        {/* ✅ 2. Add the Register Route so users can sign up */}
+        <Route path="/register" element={<Register />} />
         
-        {/* Main Dashboard - where all the action happens */}
+        {/* Main Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
