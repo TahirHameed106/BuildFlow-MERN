@@ -1,26 +1,27 @@
-// STEP 1: LOAD SECRETS. This MUST be the first line.
-require("dotenv").config(); 
-
-// STEP 2: Import other libraries
+// backend/src/server.js
+require("dotenv").config();
 const mongoose = require("mongoose");
-const app = require("./app"); // Now it's safe to import app
+const app = require("./app"); // Import the app.js we fixed
 
-// STEP 3: Connect to the database
-// We connect outside of the request handler to reuse the connection (Performance)
-if (mongoose.connection.readyState === 0) {
-  mongoose.connect(process.env.MONGO_URI, { 
-    serverSelectionTimeoutMS: 30000, 
-    bufferCommands: false 
-  })
-  .then(() => console.log("✅ MongoDB Connected Successfully"))
-  .catch(err => console.error("❌ MongoDB Connection Error:", err));
-}
+// Global variable to cache the DB connection between requests
+let isConnected = false;
 
-// 👇 HOMEPAGE ROUTE (So you know it's working)
-app.get('/', (req, res) => {
-    res.send("Backend is running successfully on Vercel! 🚀");
-});
+module.exports = async (req, res) => {
+  // 1. Connect to Database (if not already connected)
+  if (!isConnected) {
+    try {
+      await mongoose.connect(process.env.MONGO_URI, {
+        serverSelectionTimeoutMS: 5000, // Timeout fast if it fails
+        bufferCommands: false,
+      });
+      isConnected = true;
+      console.log("✅ MongoDB Connected");
+    } catch (error) {
+      console.error("❌ Database Connection Error:", error);
+      return res.status(500).send(`Database Error: ${error.message}`);
+    }
+  }
 
-// 👇 CRITICAL FOR VERCEL: Export the app instead of listening
-// Vercel handles the server starting automatically.
-module.exports = app;
+  // 2. Hand off the request to Express
+  return app(req, res);
+};
