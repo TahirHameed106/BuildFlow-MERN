@@ -5,30 +5,22 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const app = require("./app"); // Now it's safe to import app
 
-const PORT = process.env.PORT || 5000;
-
 // STEP 3: Connect to the database
-mongoose.connect(process.env.MONGO_URI, { 
+// We connect outside of the request handler to reuse the connection (Performance)
+if (mongoose.connection.readyState === 0) {
+  mongoose.connect(process.env.MONGO_URI, { 
     serverSelectionTimeoutMS: 30000, 
-    bufferCommands: false // This is a good setting, keep it
+    bufferCommands: false 
   })
-  .then(() => {
-    console.log("✅ MongoDB Connected Successfully");
-    
-    // 👇 ADDED THIS: Homepage Route 👇
-    // This makes the "Cannot GET /" error go away and shows a nice message instead
-    app.get('/', (req, res) => {
-        res.send("Backend is running successfully! 🚀");
-    });
-    // 👆 END OF NEW CODE 👆
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch(err => console.error("❌ MongoDB Connection Error:", err));
+}
 
-    // STEP 4: Start the server ONLY AFTER the DB is connected
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
+// 👇 HOMEPAGE ROUTE (So you know it's working)
+app.get('/', (req, res) => {
+    res.send("Backend is running successfully on Vercel! 🚀");
+});
 
-  })
-  .catch(err => {
-    console.error("❌ MongoDB Connection Error:", err);
-    process.exit(1);
-  });
+// 👇 CRITICAL FOR VERCEL: Export the app instead of listening
+// Vercel handles the server starting automatically.
+module.exports = app;
