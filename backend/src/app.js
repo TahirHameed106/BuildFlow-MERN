@@ -5,25 +5,29 @@ const path = require("path");
 const app = express();
 
 /* ================================
-   CORS (Express 5 + Vercel SAFE)
+   ✅ 1. CORS CONFIGURATION
 ================================ */
 app.use(
   cors({
-    origin: "https://build-flow-mern.vercel.app",
+    origin: "https://build-flow-mern.vercel.app", // Your Frontend
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
+// ✅ CRITICAL MISSING LINE: Handle Preflight Requests
+// We use "(.*)" because "*" crashes Express 5
+app.options("(.*)", cors());
+
 /* ================================
-   Body parsers
+   ✅ 2. MIDDLEWARE
 ================================ */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ================================
-   Routes
+   ✅ 3. ROUTES
 ================================ */
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/email", require("./routes/emailRoutes"));
@@ -33,13 +37,10 @@ app.use("/applications", require("./routes/applicationRoutes"));
 app.use("/documents", require("./routes/documentRoutes"));
 
 /* ================================
-   Static files
+   ✅ 4. STATIC FILES & HEALTH CHECK
 ================================ */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-/* ================================
-   Health check
-================================ */
 app.get("/", (req, res) => {
   res.send("Backend is running successfully!");
 });
