@@ -5,7 +5,7 @@ const path = require("path");
 const app = express();
 
 /* ================================
-   CORS SETUP
+   CORS CONFIG (Vercel-safe)
 ================================ */
 app.use(
   cors({
@@ -19,17 +19,14 @@ app.use(
   })
 );
 
-// Preflight handling (Vercel-safe)
-app.options("*", cors());
-
 /* ================================
-   Body Parsers
+   Parsers
 ================================ */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ================================
-   API Routes
+   Routes
 ================================ */
 app.use("/auth", require("./routes/authRoutes"));
 app.use("/email", require("./routes/emailRoutes"));
@@ -39,7 +36,7 @@ app.use("/applications", require("./routes/applicationRoutes"));
 app.use("/documents", require("./routes/documentRoutes"));
 
 /* ================================
-   Static Uploads
+   Static Files
 ================================ */
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
