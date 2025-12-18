@@ -19,6 +19,7 @@ const Icons = {
 };
 
 function Dashboard() {
+  // ✅ FIX: Ensure this matches your live backend URL exactly (no trailing slash)
   const API_URL = "https://build-flow-mern-backend.vercel.app";
   const navigate = useNavigate();
 
@@ -79,8 +80,7 @@ function Dashboard() {
       const res = await axiosInstance.get("/tasks");
       setTasks(res.data.tasks);
     } catch (err) {
-      console.error(err);
-      alert("Failed to fetch tasks.");
+      console.error("Fetch tasks error:", err);
     }
   };
 
@@ -89,8 +89,7 @@ function Dashboard() {
       const res = await axiosInstance.get(`/documents?role=${user.role}`);
       setDocuments(res.data.documents);
     } catch (err) {
-      console.error(err);
-      alert("Failed to fetch documents.");
+      console.error("Fetch docs error:", err);
     }
   };
 
@@ -103,7 +102,7 @@ function Dashboard() {
   // --- TASK HANDLERS ---
   const handleCreateTask = async (e) => {
     e.preventDefault();
-    if (!newTaskDesc) return;
+    if (!newTaskDesc.trim()) return;
     try {
       const res = await axiosInstance.post("/tasks", { description: newTaskDesc });
       setTasks([res.data.task, ...tasks]);
@@ -142,7 +141,7 @@ function Dashboard() {
   };
 
   const handleManagerAction = async (taskId, action) => {
-    if (!window.confirm(`Are you sure?`)) return;
+    if (!window.confirm(`Are you sure you want to ${action} this task?`)) return;
     try {
       await axiosInstance.put(`/tasks/manager-action/${taskId}`, { action });
       if (action === "approve") setTasks(tasks.filter(t => t._id !== taskId));
@@ -155,11 +154,11 @@ function Dashboard() {
   // --- PDF / DOCUMENTS ---
   const handleGeneratePDF = async (e) => {
     e.preventDefault();
-    if (!appPrompt) return alert("Enter prompt!");
+    if (!appPrompt.trim()) return alert("Enter prompt!");
     setLoading(true);
     try {
       const res = await axiosInstance.post(
-        "/applications/generate",
+        "/documents/generate-ai-pdf", // ✅ Check if route matches backend (documents vs applications)
         { userName: user.name, letterType: appType, prompt: appPrompt },
         { responseType: "blob" }
       );
@@ -170,9 +169,11 @@ function Dashboard() {
       document.body.appendChild(link);
       link.click();
     } catch (err) {
-      alert("Generation failed.");
+      console.error("PDF Gen Error:", err);
+      alert("Generation failed. Check console for details.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleFileUpload = async (e) => {
@@ -192,8 +193,9 @@ function Dashboard() {
       setFile(null);
     } catch (err) {
       alert("Upload failed.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleFileDelete = async (id) => {
@@ -206,17 +208,33 @@ function Dashboard() {
     }
   };
 
-  // --- SUMMARY ---
+  // --- ✅ FIXED: ROBUST SUMMARIZER HANDLER ---
   const handleSummarize = async () => {
-    if (!inputText) return alert("Enter text!");
+    // 1. Validation: Check if input is empty
+    if (!inputText || !inputText.trim()) {
+      return alert("Please enter some text to summarize!");
+    }
+
     setLoading(true);
     try {
-      const res = await axiosInstance.post("/summary", { text: inputText });
+      console.log("Sending summary request for:", inputText.trim().substring(0, 20) + "...");
+      
+      // 2. Request: Send trimmed text to ensure valid JSON payload
+      const res = await axiosInstance.post("/summary", { 
+        text: inputText.trim() 
+      });
+
+      console.log("Summary received:", res.data);
       setSummary(res.data.summary);
     } catch (err) {
-      alert("Summary failed.");
+      // 3. Error Handling: Log specific server error message
+      console.error("Summarizer Error:", err.response?.data || err.message);
+      
+      const errorMessage = err.response?.data?.error || err.message || "Summary generation failed.";
+      alert(`Summary failed: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // --- EMAIL ---
@@ -228,9 +246,11 @@ function Dashboard() {
       alert("Email Sent!");
       setEmailTo(""); setEmailSubject(""); setEmailBody("");
     } catch (err) {
+      console.error("Email Error:", err.response?.data || err.message);
       alert("Email failed.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (!user) return <div style={styles.loadingScreen}>Loading BuildFlow...</div>;
@@ -496,9 +516,9 @@ const styles = {
   btnPrimary: { background: '#0284c7', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem' },
   btnSecondary: { background: '#94a3b8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' },
   btnDanger: { background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' },
-  btnDangerSmall: { background: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
-  btnWarningSmall: { background: '#ffedd5', color: '#c2410c', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
-  btnSuccess: { background: '#dcfce7', color: '#16a34a', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', marginRight: '10px' },
+  btnDangerSmall: { background: '#fee2e2', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
+  btnWarningSmall: { background: '#ffedd5', color: 'white', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
+  btnSuccess: { background: '#dcfce7', color: '16a34a', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', marginRight: '10px' },
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
   listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' },
   metaText: { fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' },
