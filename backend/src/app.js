@@ -5,20 +5,25 @@ const path = require("path");
 const app = express();
 
 /* ================================
-   CORS (Vercel + Express SAFE)
+   CORS SETUP
 ================================ */
 app.use(
   cors({
-    origin: ["https://build-flow-mern.vercel.app", "http://localhost:5173"], // Added localhost for testing
+    origin: ["https://build-flow-mern.vercel.app", "http://localhost:5173"], 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
-// ✅ CRITICAL FIX: Handle Preflight OPTIONS requests
-// Without this, the browser BLOCKS the "Authorization" header
-app.options("*", cors());
+// ✅ SAFE FIX: Handle Preflight Manually (Avoids the "*" crash)
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+  } else {
+    next();
+  }
+});
 
 /* ================================
    Body Parsers
@@ -48,4 +53,4 @@ app.get("/", (req, res) => {
   res.status(200).send("Backend is running successfully!");
 });
 
-module.exports = app;
+module.exports = app;s
