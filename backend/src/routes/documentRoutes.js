@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { uploadDocument, getDocuments, deleteDocument } = require('../controllers/documentController');
 
-// Configure Multer (File Upload)
+// ✅ ADDED: generateAiPdf to the import list
+const { uploadDocument, getDocuments, deleteDocument, generateAiPdf } = require('../controllers/documentController');
+
+// Configure Multer (YOUR EXISTING CODE)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -19,7 +21,6 @@ const upload = multer({ storage: storage });
 // --- ROUTES ---
 
 // POST /api/documents/upload
-// We use 'upload.single' to handle the file, then our controller handles the DB
 router.post('/upload', upload.single('file'), uploadDocument);
 
 // GET /api/documents?role=Engineer
@@ -27,5 +28,8 @@ router.get('/', getDocuments);
 
 // DELETE /api/documents/:id
 router.delete('/:id', deleteDocument);
+
+// ✅ NEW ROUTE: Generate AI PDF
+router.post('/generate-ai-pdf', generateAiPdf);
 
 module.exports = router;

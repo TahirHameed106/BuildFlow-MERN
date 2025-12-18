@@ -1,9 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-// Import the new function from our controller
-const { generateAiPdf } = require('../controllers/applicationController');
+const { createApplication, getApplications } = require("../controllers/applicationController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
-// This new route will handle all AI-powered PDF requests
-router.post('/generate', generateAiPdf);
+// POST /applications - Create new application
+router.post("/", authMiddleware, createApplication);
+
+// GET /applications - Read all applications
+router.get("/", authMiddleware, getApplications);
 
 module.exports = router;

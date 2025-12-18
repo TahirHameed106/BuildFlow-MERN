@@ -9,12 +9,16 @@ const app = express();
 ================================ */
 app.use(
   cors({
-    origin: "https://build-flow-mern.vercel.app",
+    origin: ["https://build-flow-mern.vercel.app", "http://localhost:5173"], // Added localhost for testing
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
+// ✅ CRITICAL FIX: Handle Preflight OPTIONS requests
+// Without this, the browser BLOCKS the "Authorization" header
+app.options("*", cors());
 
 /* ================================
    Body Parsers
