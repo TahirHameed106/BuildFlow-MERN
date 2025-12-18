@@ -19,17 +19,15 @@ const Icons = {
 };
 
 function Dashboard() {
-  // --- LIVE BACKEND URL ---
-// REPLACE with your new Vercel Backend link
- const API_URL = "https://build-flow-mern-backend.vercel.app/";
-  // --- STATE ---
+  const API_URL = "https://build-flow-mern-backend.vercel.app";
+  const navigate = useNavigate();
+
+  // --- STATES ---
   const [activeTab, setActiveTab] = useState("tasks");
   const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  // Module States
   const [tasks, setTasks] = useState([]);
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [appPrompt, setAppPrompt] = useState("");
@@ -41,26 +39,35 @@ function Dashboard() {
   const [emailBody, setEmailBody] = useState("");
   const [file, setFile] = useState(null);
   const [documents, setDocuments] = useState([]);
-  
-  // Modals
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTaskId, setDeleteTaskId] = useState(null);
   const [deleteReason, setDeleteReason] = useState("");
 
-  // --- DATA FETCHING ---
+  // --- Axios Instance with JWT ---
+  const token = localStorage.getItem("token");
+  const axiosInstance = axios.create({
+    baseURL: API_URL,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+  });
+
+  // --- USER AUTH ---
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     if (!token || !storedUser) {
       navigate("/login");
-    } else {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-      if (userData.role === 'Engineer') setActiveTab('summarizer');
-      else setActiveTab('tasks');
+      return;
     }
-  }, [navigate]);
+    const userData = JSON.parse(storedUser);
+    setUser(userData);
+    if (userData.role === "Engineer") setActiveTab("summarizer");
+    else setActiveTab("tasks");
+  }, [navigate, token]);
 
+  // --- FETCH MODULE DATA ---
   useEffect(() => {
     if (!user) return;
     if (activeTab === "tasks") fetchTasks();
@@ -69,18 +76,22 @@ function Dashboard() {
 
   const fetchTasks = async () => {
     try {
-      // ✅ UPDATED URL
-      const res = await axios.get(`${API_URL}/tasks`);
+      const res = await axiosInstance.get("/tasks");
       setTasks(res.data.tasks);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch tasks.");
+    }
   };
 
   const fetchDocuments = async () => {
     try {
-      // ✅ UPDATED URL
-      const res = await axios.get(`${API_URL}/documents?role=${user.role}`);
+      const res = await axiosInstance.get(`/documents?role=${user.role}`);
       setDocuments(res.data.documents);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch documents.");
+    }
   };
 
   const handleLogout = () => {
@@ -89,24 +100,26 @@ function Dashboard() {
     navigate("/login");
   };
 
-  // --- HANDLERS ---
+  // --- TASK HANDLERS ---
   const handleCreateTask = async (e) => {
     e.preventDefault();
     if (!newTaskDesc) return;
     try {
-      // ✅ UPDATED URL
-      const res = await axios.post(`${API_URL}/tasks`, { description: newTaskDesc });
+      const res = await axiosInstance.post("/tasks", { description: newTaskDesc });
       setTasks([res.data.task, ...tasks]);
       setNewTaskDesc("");
-    } catch (err) { alert("Failed to create task."); }
+    } catch (err) {
+      alert("Failed to create task.");
+    }
   };
 
   const handleUpdateTaskStatus = async (id, newStatus) => {
     try {
-      // ✅ UPDATED URL
-      const res = await axios.put(`${API_URL}/tasks/${id}`, { status: newStatus });
+      const res = await axiosInstance.put(`/tasks/${id}`, { status: newStatus });
       setTasks(tasks.map(t => (t._id === id ? res.data.task : t)));
-    } catch (err) { alert("Failed to update task."); }
+    } catch (err) {
+      alert("Failed to update task.");
+    }
   };
 
   const handleRequestDeleteClick = (taskId) => {
@@ -117,63 +130,48 @@ function Dashboard() {
   const handleRequestDeleteSubmit = async (e) => {
     e.preventDefault();
     try {
-      // ✅ UPDATED URL
-      const res = await axios.post(`${API_URL}/tasks/request-delete/${deleteTaskId}`, { reason: deleteReason });
+      const res = await axiosInstance.post(`/tasks/request-delete/${deleteTaskId}`, { reason: deleteReason });
       setTasks(tasks.map(t => (t._id === deleteTaskId ? res.data.task : t)));
       alert("Request submitted.");
-    } catch (err) { alert("Failed to request deletion."); } 
-    finally { setDeleteReason(""); setShowDeleteModal(false); }
+    } catch (err) {
+      alert("Failed to request deletion.");
+    } finally {
+      setDeleteReason("");
+      setShowDeleteModal(false);
+    }
   };
 
   const handleManagerAction = async (taskId, action) => {
     if (!window.confirm(`Are you sure?`)) return;
     try {
-      // ✅ UPDATED URL
-      await axios.put(`${API_URL}/tasks/manager-action/${taskId}`, { action });
-      if (action === 'approve') setTasks(tasks.filter(t => t._id !== taskId));
+      await axiosInstance.put(`/tasks/manager-action/${taskId}`, { action });
+      if (action === "approve") setTasks(tasks.filter(t => t._id !== taskId));
       else fetchTasks();
-    } catch (err) { alert("Action failed."); }
+    } catch (err) {
+      alert("Action failed.");
+    }
   };
 
+  // --- PDF / DOCUMENTS ---
   const handleGeneratePDF = async (e) => {
     e.preventDefault();
     if (!appPrompt) return alert("Enter prompt!");
     setLoading(true);
     try {
-      // ✅ UPDATED URL
-      const res = await axios.post(`${API_URL}/applications/generate`, {
-        userName: user.name, letterType: appType, prompt: appPrompt
-      }, { responseType: 'blob' });
+      const res = await axiosInstance.post(
+        "/applications/generate",
+        { userName: user.name, letterType: appType, prompt: appPrompt },
+        { responseType: "blob" }
+      );
       const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `${appType}.pdf`);
+      link.setAttribute("download", `${appType}.pdf`);
       document.body.appendChild(link);
       link.click();
-    } catch (err) { alert("Generation failed."); }
-    setLoading(false);
-  };
-
-  const handleSummarize = async () => {
-    if (!inputText) return alert("Enter text!");
-    setLoading(true);
-    try {
-      // ✅ UPDATED URL
-      const res = await axios.post(`${API_URL}/summary`, { text: inputText });
-      setSummary(res.data.summary);
-    } catch (err) { alert("Summary failed."); }
-    setLoading(false);
-  };
-
-  const handleSendEmail = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // ✅ UPDATED URL
-      await axios.post(`${API_URL}/email/send`, { to: emailTo, subject: emailSubject, body: emailBody });
-      alert("Email Sent!");
-      setEmailTo(""); setEmailSubject(""); setEmailBody("");
-    } catch (err) { alert("Email failed."); }
+    } catch (err) {
+      alert("Generation failed.");
+    }
     setLoading(false);
   };
 
@@ -186,29 +184,60 @@ function Dashboard() {
     formData.append("role", user.role);
     setLoading(true);
     try {
-      // ✅ UPDATED URL
-      const res = await axios.post(`${API_URL}/documents/upload`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await axiosInstance.post("/documents/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       setDocuments([res.data.document, ...documents]);
       alert("Uploaded!");
       setFile(null);
-    } catch (err) { alert("Upload failed."); }
+    } catch (err) {
+      alert("Upload failed.");
+    }
     setLoading(false);
   };
 
   const handleFileDelete = async (id) => {
     if (!window.confirm("Delete file?")) return;
     try {
-      // ✅ UPDATED URL
-      await axios.delete(`${API_URL}/documents/${id}`);
+      await axiosInstance.delete(`/documents/${id}`);
       setDocuments(documents.filter(d => d._id !== id));
-    } catch (err) { alert("Delete failed."); }
+    } catch (err) {
+      alert("Delete failed.");
+    }
+  };
+
+  // --- SUMMARY ---
+  const handleSummarize = async () => {
+    if (!inputText) return alert("Enter text!");
+    setLoading(true);
+    try {
+      const res = await axiosInstance.post("/summary", { text: inputText });
+      setSummary(res.data.summary);
+    } catch (err) {
+      alert("Summary failed.");
+    }
+    setLoading(false);
+  };
+
+  // --- EMAIL ---
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axiosInstance.post("/email/send", { to: emailTo, subject: emailSubject, body: emailBody });
+      alert("Email Sent!");
+      setEmailTo(""); setEmailSubject(""); setEmailBody("");
+    } catch (err) {
+      alert("Email failed.");
+    }
+    setLoading(false);
   };
 
   if (!user) return <div style={styles.loadingScreen}>Loading BuildFlow...</div>;
-  
+
   const userRole = user.role;
-  const pendingRequests = tasks.filter(t => t.status === 'Pending Manager Approval');
-  const activeTasks = tasks.filter(t => t.status !== 'Pending Manager Approval');
+  const pendingRequests = tasks.filter(t => t.status === "Pending Manager Approval");
+  const activeTasks = tasks.filter(t => t.status !== "Pending Manager Approval");
 
   return (
     <div style={styles.container}>
@@ -218,10 +247,20 @@ function Dashboard() {
           <form onSubmit={handleRequestDeleteSubmit} style={styles.modalContent}>
             <h3 style={styles.modalTitle}>Request Deletion</h3>
             <p style={styles.modalText}>Reason is required for Manager approval.</p>
-            <textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} rows="3" style={styles.input} required />
+            <textarea
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              rows="3"
+              style={styles.input}
+              required
+            />
             <div style={styles.modalButtons}>
-              <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.btnSecondary}>Cancel</button>
-              <button type="submit" style={styles.btnDanger}>Send Request</button>
+              <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.btnSecondary}>
+                Cancel
+              </button>
+              <button type="submit" style={styles.btnDanger}>
+                Send Request
+              </button>
             </div>
           </form>
         </div>
@@ -230,65 +269,108 @@ function Dashboard() {
       {/* NAVBAR */}
       <nav style={styles.navbar}>
         <div style={styles.navLeft}>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={styles.mobileMenuBtn}>{Icons.Menu}</button>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={styles.mobileMenuBtn}
+          >
+            {Icons.Menu}
+          </button>
           <h1 style={styles.logo}>BuildFlow</h1>
         </div>
         <div style={styles.navRight}>
-          <span style={styles.userInfo}>{user.name} <span style={styles.roleBadge}>{user.role}</span></span>
-          <button onClick={handleLogout} style={styles.btnLogout}>Logout</button>
+          <span style={styles.userInfo}>
+            {user.name} <span style={styles.roleBadge}>{user.role}</span>
+          </span>
+          <button onClick={handleLogout} style={styles.btnLogout}>
+            Logout
+          </button>
         </div>
       </nav>
 
+      {/* MAIN LAYOUT */}
       <div style={styles.layout}>
-        {/* SIDEBAR */}
-        <aside style={{...styles.sidebar, ...(isSidebarOpen ? styles.sidebarOpen : {})}}>
+        <aside style={{ ...styles.sidebar, ...(isSidebarOpen ? styles.sidebarOpen : {}) }}>
           <div style={styles.menu}>
-            <MenuButton active={activeTab === "tasks"} onClick={() => {setActiveTab("tasks"); setIsSidebarOpen(false);}} icon={Icons.Tasks} label="Task Tracker" />
-            
-            {userRole === 'Manager' && (
-              <MenuButton active={activeTab === "requests"} onClick={() => {setActiveTab("requests"); setIsSidebarOpen(false);}} icon="🚨" label={`Requests (${pendingRequests.length})`} isAlert />
+            <MenuButton
+              active={activeTab === "tasks"}
+              onClick={() => { setActiveTab("tasks"); setIsSidebarOpen(false); }}
+              icon={Icons.Tasks}
+              label="Task Tracker"
+            />
+            {userRole === "Manager" && (
+              <MenuButton
+                active={activeTab === "requests"}
+                onClick={() => { setActiveTab("requests"); setIsSidebarOpen(false); }}
+                icon="🚨"
+                label={`Requests (${pendingRequests.length})`}
+                isAlert
+              />
             )}
-            
-            {(userRole === 'Manager' || userRole === 'HR') && (
-              <MenuButton active={activeTab === "applications"} onClick={() => {setActiveTab("applications"); setIsSidebarOpen(false);}} icon={Icons.Docs} label="AI Doc Gen" />
-            )}
-            
-            {(userRole === 'Engineer' || userRole === 'Manager') && (
-              <MenuButton active={activeTab === "summarizer"} onClick={() => {setActiveTab("summarizer"); setIsSidebarOpen(false);}} icon={Icons.Summary} label="Summarizer" />
-            )}
-
-            {(userRole === 'Manager' || userRole === 'HR') && (
+            {(userRole === "Manager" || userRole === "HR") && (
               <>
-                <MenuButton active={activeTab === "email"} onClick={() => {setActiveTab("email"); setIsSidebarOpen(false);}} icon={Icons.Email} label="Email" />
-                <MenuButton active={activeTab === "documents"} onClick={() => {setActiveTab("documents"); setIsSidebarOpen(false);}} icon={Icons.Storage} label="Documents" />
+                <MenuButton
+                  active={activeTab === "applications"}
+                  onClick={() => { setActiveTab("applications"); setIsSidebarOpen(false); }}
+                  icon={Icons.Docs}
+                  label="AI Doc Gen"
+                />
+                <MenuButton
+                  active={activeTab === "email"}
+                  onClick={() => { setActiveTab("email"); setIsSidebarOpen(false); }}
+                  icon={Icons.Email}
+                  label="Email"
+                />
+                <MenuButton
+                  active={activeTab === "documents"}
+                  onClick={() => { setActiveTab("documents"); setIsSidebarOpen(false); }}
+                  icon={Icons.Storage}
+                  label="Documents"
+                />
               </>
+            )}
+            {(userRole === "Engineer" || userRole === "Manager") && (
+              <MenuButton
+                active={activeTab === "summarizer"}
+                onClick={() => { setActiveTab("summarizer"); setIsSidebarOpen(false); }}
+                icon={Icons.Summary}
+                label="Summarizer"
+              />
             )}
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
         <main style={styles.main}>
           <div style={styles.contentWrapper}>
-            
-            {/* --- TASKS --- */}
+            {/* TASKS */}
             {activeTab === "tasks" && (
               <Card title="Task Tracker" subtitle="Manage team tasks efficiently">
                 <form onSubmit={handleCreateTask} style={styles.formRow}>
-                  <input type="text" placeholder="New task description..." value={newTaskDesc} onChange={(e) => setNewTaskDesc(e.target.value)} style={styles.inputGrow} />
+                  <input
+                    type="text"
+                    placeholder="New task description..."
+                    value={newTaskDesc}
+                    onChange={(e) => setNewTaskDesc(e.target.value)}
+                    style={styles.inputGrow}
+                  />
                   <button type="submit" style={styles.btnPrimary}>Add</button>
                 </form>
                 <div style={styles.list}>
                   {activeTasks.map(task => (
                     <div key={task._id} style={styles.listItem}>
-                      <span style={{textDecoration: task.status==='Completed'?'line-through':'none'}}>{task.description}</span>
+                      <span style={{ textDecoration: task.status === "Completed" ? "line-through" : "none" }}>
+                        {task.description}
+                      </span>
                       <div style={styles.actions}>
                         <select value={task.status} onChange={(e) => handleUpdateTaskStatus(task._id, e.target.value)} style={styles.select}>
-                          <option>Pending</option><option>In Progress</option><option>Completed</option>
+                          <option>Pending</option>
+                          <option>In Progress</option>
+                          <option>Completed</option>
                         </select>
-                        {userRole === 'Manager' ? 
-                          <button onClick={() => handleManagerAction(task._id, 'approve')} style={styles.btnDangerSmall}>{Icons.Delete}</button> :
+                        {userRole === "Manager" ? (
+                          <button onClick={() => handleManagerAction(task._id, "approve")} style={styles.btnDangerSmall}>{Icons.Delete}</button>
+                        ) : (
                           <button onClick={() => handleRequestDeleteClick(task._id)} style={styles.btnWarningSmall}>Req. Delete</button>
-                        }
+                        )}
                       </div>
                     </div>
                   ))}
@@ -296,27 +378,51 @@ function Dashboard() {
               </Card>
             )}
 
-            {/* --- REQUESTS --- */}
-            {activeTab === "requests" && (
-              <Card title="Pending Requests" subtitle="Approve or reject deletion requests">
-                {pendingRequests.length === 0 ? <p style={styles.emptyText}>No pending requests.</p> : 
-                  pendingRequests.map(req => (
-                    <div key={req._id} style={styles.requestItem}>
+            {/* DOCUMENTS */}
+            {activeTab === "documents" && (
+              <Card title={`Document Storage (${userRole})`} subtitle="Secure file repository">
+                <form onSubmit={handleFileUpload} style={styles.uploadForm}>
+                  <input type="file" onChange={(e) => setFile(e.target.files[0])} style={styles.fileInput} />
+                  <button type="submit" disabled={loading} style={styles.btnPrimary}>{loading ? "..." : Icons.Upload}</button>
+                </form>
+                <div style={styles.list}>
+                  {documents.map(doc => (
+                    <div key={doc._id} style={styles.listItem}>
                       <div>
-                        <strong>{req.description}</strong>
-                        <div style={styles.reasonText}>Reason: {req.deletionReason}</div>
+                        <a href={`${API_URL}${doc.filePath}`} target="_blank" rel="noreferrer" style={styles.link}>
+                          {Icons.Docs} {doc.fileName}
+                        </a>
+                        <div style={styles.metaText}>By {doc.uploadedBy} • {new Date(doc.createdAt).toLocaleDateString()}</div>
                       </div>
-                      <div style={styles.actions}>
-                        <button onClick={() => handleManagerAction(req._id, 'approve')} style={styles.btnSuccess}>Approve</button>
-                        <button onClick={() => handleManagerAction(req._id, 'reject')} style={styles.btnDanger}>Reject</button>
-                      </div>
+                      <button onClick={() => handleFileDelete(doc._id)} style={styles.btnDangerSmall}>{Icons.Delete}</button>
                     </div>
-                  ))
-                }
+                  ))}
+                </div>
               </Card>
             )}
 
-            {/* --- AI DOCS --- */}
+            {/* SUMMARIZER */}
+            {activeTab === "summarizer" && (
+              <Card title="AI Meeting Summarizer" subtitle="Convert notes into actionable summaries">
+                <textarea rows="6" placeholder="Paste meeting notes here..." value={inputText} onChange={(e) => setInputText(e.target.value)} style={styles.input} />
+                <button onClick={handleSummarize} disabled={loading} style={styles.btnPrimary}>{loading ? "Thinking..." : `${Icons.Magic} Summarize`}</button>
+                {summary && <div style={styles.resultBox}><ReactMarkdown>{summary}</ReactMarkdown></div>}
+              </Card>
+            )}
+
+            {/* EMAIL */}
+            {activeTab === "email" && (
+              <Card title="Email Sender" subtitle="Send updates to team or clients">
+                <form onSubmit={handleSendEmail} style={styles.formColumn}>
+                  <input type="email" placeholder="To" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} style={styles.input} required />
+                  <input type="text" placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} style={styles.input} required />
+                  <textarea rows="5" placeholder="Message" value={emailBody} onChange={(e) => setEmailBody(e.target.value)} style={styles.input} required />
+                  <button type="submit" disabled={loading} style={styles.btnPrimary}>{loading ? "Sending..." : `${Icons.Send} Send Email`}</button>
+                </form>
+              </Card>
+            )}
+
+            {/* APPLICATIONS (PDF Gen) */}
             {activeTab === "applications" && (
               <Card title="AI Document Generator" subtitle="Generate professional letters instantly">
                 <form onSubmit={handleGeneratePDF} style={styles.formColumn}>
@@ -331,50 +437,6 @@ function Dashboard() {
                 </form>
               </Card>
             )}
-
-            {/* --- SUMMARIZER --- */}
-            {activeTab === "summarizer" && (
-              <Card title="AI Meeting Summarizer" subtitle="Convert notes into actionable summaries">
-                <textarea rows="6" placeholder="Paste meeting notes here..." value={inputText} onChange={(e) => setInputText(e.target.value)} style={styles.input} />
-                <button onClick={handleSummarize} disabled={loading} style={styles.btnPrimary}>{loading ? "Thinking..." : `${Icons.Magic} Summarize`}</button>
-                {summary && <div style={styles.resultBox}><ReactMarkdown>{summary}</ReactMarkdown></div>}
-              </Card>
-            )}
-
-            {/* --- EMAIL --- */}
-            {activeTab === "email" && (
-              <Card title="Email Sender" subtitle="Send updates to team or clients">
-                <form onSubmit={handleSendEmail} style={styles.formColumn}>
-                  <input type="email" placeholder="To" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} style={styles.input} required />
-                  <input type="text" placeholder="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} style={styles.input} required />
-                  <textarea rows="5" placeholder="Message" value={emailBody} onChange={(e) => setEmailBody(e.target.value)} style={styles.input} required />
-                  <button type="submit" disabled={loading} style={styles.btnPrimary}>{loading ? "Sending..." : `${Icons.Send} Send Email`}</button>
-                </form>
-              </Card>
-            )}
-
-            {/* --- DOCUMENTS --- */}
-            {activeTab === "documents" && (
-              <Card title={`Document Storage (${userRole})`} subtitle="Secure file repository">
-                <form onSubmit={handleFileUpload} style={styles.uploadForm}>
-                  <input type="file" onChange={(e) => setFile(e.target.files[0])} style={styles.fileInput} />
-                  <button type="submit" disabled={loading} style={styles.btnPrimary}>{loading ? "..." : Icons.Upload}</button>
-                </form>
-                <div style={styles.list}>
-                  {documents.map(doc => (
-                    <div key={doc._id} style={styles.listItem}>
-                      <div>
-                        {/* ✅ UPDATED URL for File Downloads */}
-                        <a href={`${API_URL}${doc.filePath}`} target="_blank" rel="noreferrer" style={styles.link}>{Icons.Docs} {doc.fileName}</a>
-                        <div style={styles.metaText}>By {doc.uploadedBy} • {new Date(doc.createdAt).toLocaleDateString()}</div>
-                      </div>
-                      <button onClick={() => handleFileDelete(doc._id)} style={styles.btnDangerSmall}>{Icons.Delete}</button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
-
           </div>
         </main>
       </div>
@@ -384,7 +446,7 @@ function Dashboard() {
 
 // --- UI COMPONENTS ---
 const MenuButton = ({ active, onClick, icon, label, isAlert }) => (
-  <button onClick={onClick} style={{...styles.menuBtn, ...(active ? styles.menuBtnActive : {}), ...(isAlert ? styles.menuBtnAlert : {})}}>
+  <button onClick={onClick} style={{ ...styles.menuBtn, ...(active ? styles.menuBtnActive : {}), ...(isAlert ? styles.menuBtnAlert : {}) }}>
     <span style={styles.menuIcon}>{icon}</span> {label}
   </button>
 );
@@ -399,97 +461,57 @@ const Card = ({ title, subtitle, children }) => (
   </div>
 );
 
-// --- STYLES (Responsive & Modern) ---
+// --- STYLES ---
 const styles = {
   container: { minHeight: '100vh', display: 'flex', flexDirection: 'column' },
   loadingScreen: { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#666' },
-  
-  // Navbar
   navbar: { height: '60px', background: '#1e293b', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', position: 'sticky', top: 0, zIndex: 50 },
   navLeft: { display: 'flex', alignItems: 'center', gap: '15px' },
   navRight: { display: 'flex', alignItems: 'center', gap: '15px' },
   logo: { fontSize: '1.2rem', fontWeight: 'bold', margin: 0 },
-  mobileMenuBtn: { background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'none' }, 
+  mobileMenuBtn: { background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', display: 'none' },
   roleBadge: { background: '#334155', padding: '2px 8px', borderRadius: '12px', fontSize: '0.8rem', marginLeft: '5px' },
   btnLogout: { background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' },
   userInfo: { fontSize: '0.9rem', display: 'flex', alignItems: 'center' },
-
-  // Layout
   layout: { display: 'flex', flex: 1, height: 'calc(100vh - 60px)' },
-  
-  // Sidebar
   sidebar: { width: '260px', background: '#fff', borderRight: '1px solid #e2e8f0', padding: '20px', display: 'flex', flexDirection: 'column', transition: 'transform 0.3s ease' },
-  sidebarOpen: { transform: 'translateX(0)' }, 
+  sidebarOpen: { transform: 'translateX(0)' },
   menu: { display: 'flex', flexDirection: 'column', gap: '5px' },
   menuBtn: { padding: '12px 15px', border: 'none', background: 'transparent', color: '#64748b', textAlign: 'left', cursor: 'pointer', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.95rem', fontWeight: '500', transition: 'all 0.2s' },
   menuBtnActive: { background: '#e0f2fe', color: '#0284c7' },
   menuBtnAlert: { color: '#dc2626', background: '#fee2e2' },
   menuIcon: { fontSize: '1.1rem' },
-
-  // Main Content
   main: { flex: 1, background: '#f1f5f9', overflowY: 'auto', padding: '20px' },
   contentWrapper: { maxWidth: '900px', margin: '0 auto' },
-
-  // Card
   card: { background: 'white', borderRadius: '12px', padding: '30px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0' },
   cardHeader: { marginBottom: '25px', borderBottom: '1px solid #f1f5f9', paddingBottom: '15px' },
   cardTitle: { margin: 0, fontSize: '1.5rem', color: '#0f172a' },
   cardSubtitle: { margin: '5px 0 0', color: '#64748b', fontSize: '0.9rem' },
-
-  // Forms & Inputs
   formRow: { display: 'flex', gap: '10px', marginBottom: '20px' },
   formColumn: { display: 'flex', flexDirection: 'column', gap: '15px' },
   input: { padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem', width: '100%', fontFamily: 'inherit' },
   inputGrow: { flex: 1, padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem' },
   label: { fontSize: '0.9rem', fontWeight: '600', color: '#334155', marginBottom: '-10px' },
   select: { padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer' },
-  
-  // Buttons
   btnPrimary: { background: '#0284c7', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.95rem' },
   btnSecondary: { background: '#94a3b8', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' },
   btnDanger: { background: '#ef4444', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' },
   btnDangerSmall: { background: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
   btnWarningSmall: { background: '#ffedd5', color: '#c2410c', border: 'none', padding: '6px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
   btnSuccess: { background: '#dcfce7', color: '#16a34a', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: '600', marginRight: '10px' },
-
-  // Lists
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
   listItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' },
-  requestItem: { padding: '15px', background: '#fff1f2', borderRadius: '8px', border: '1px solid #fecaca', marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  actions: { display: 'flex', gap: '10px', alignItems: 'center' },
   metaText: { fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' },
   link: { color: '#0284c7', textDecoration: 'none', fontWeight: '500' },
   reasonText: { fontSize: '0.85rem', color: '#ef4444', marginTop: '5px' },
-
-  // Result Box
   resultBox: { marginTop: '20px', padding: '20px', background: '#f8fafc', borderRadius: '8px', borderLeft: '4px solid #0284c7', lineHeight: '1.6' },
   uploadForm: { display: 'flex', gap: '10px', marginBottom: '20px', alignItems: 'center', background: '#f1f5f9', padding: '15px', borderRadius: '8px' },
   fileInput: { flex: 1 },
-
-  // Modal
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
   modalContent: { background: 'white', padding: '30px', borderRadius: '12px', width: '90%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' },
   modalTitle: { margin: '0 0 10px 0', fontSize: '1.3rem' },
   modalText: { color: '#64748b', marginBottom: '20px', fontSize: '0.95rem' },
   modalButtons: { display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' },
 };
-
-// --- RESPONSIVE CSS ---
-const styleTag = document.createElement("style");
-styleTag.innerHTML = `
-  @media (max-width: 768px) {
-    aside { position: fixed; height: 100%; z-index: 40; transform: translateX(-100%); }
-    aside[style*="translateX(0)"] { transform: translateX(0) !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
-    button[style*="display: none"] { display: block !important; }
-    main { padding: 10px !important; }
-    div[style*="padding: 30px"] { padding: 15px !important; }
-    .mobile-visible { display: block !important; }
-  }
-  @media (min-width: 769px) {
-    aside { transform: none !important; position: static !important; height: auto !important; }
-    button[aria-label="Toggle Menu"] { display: none !important; }
-  }
-`;
-document.head.appendChild(styleTag);
 
 export default Dashboard;
