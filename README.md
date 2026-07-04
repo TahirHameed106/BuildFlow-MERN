@@ -1,65 +1,120 @@
 # 🚀 BuildFlow MERN
 
-A full-stack project management application built with the **MERN Stack** (MongoDB, Express.js, React, and Node.js). The application allows users to manage projects, organize tasks, and track progress through a modern and responsive interface.
+BuildFlow is a full-stack project management application built with the **MERN Stack**. It helps users create and manage projects, organize tasks, and collaborate through a clean and responsive interface.
+
+## 🌐 Live Demo
+
+* **Frontend:** https://build-flow-mern.vercel.app/login
+* **Backend API:** https://build-flow-mern-backend-19c1869df-leclercs-projects-6739f3e2.vercel.app/
 
 ## ✨ Features
 
-* User Authentication
-* Create, Edit, and Delete Projects
+* User Authentication (Register & Login)
+* Create, Update, and Delete Projects
 * Task Management
-* Responsive UI
-* REST API Integration
-* MongoDB Database
+* Secure REST API
+* Responsive Design
+* MongoDB Atlas Database Integration
 
 ## 🛠️ Tech Stack
 
+### Frontend
+
 * React
-* Node.js
-* Express.js
-* MongoDB
-* JavaScript
+* React Router
+* Axios
 * CSS
 
-## 📂 Project Structure
+### Backend
 
-```
+* Node.js
+* Express.js
+* MongoDB Atlas
+* Mongoose
+* JWT Authentication
+
+### Deployment
+
+* Frontend: Vercel
+* Backend: Vercel
+* Database: MongoDB Atlas
+
+## 📁 Project Structure
+
+```text
 BuildFlow-MERN/
-├── client/     # React Frontend
-├── server/     # Express Backend
+├── client/      # React Frontend
+├── server/      # Express Backend
 └── README.md
 ```
 
-## ⚙️ Installation
+## ⚙️ Getting Started
 
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/TahirHameed106/BuildFlow-MERN.git
-```
-
-Go to the project folder:
-
-```bash
 cd BuildFlow-MERN
 ```
 
-Install dependencies for both client and server:
+### 2. Install dependencies
+
+Frontend:
 
 ```bash
+cd client
 npm install
 ```
 
-Start the development servers:
+Backend:
+
+```bash
+cd ../server
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file inside the server folder and add your MongoDB Atlas connection string and JWT secret.
+
+Example:
+
+```env
+MONGODB_URI=your_mongodb_atlas_connection_string
+JWT_SECRET=your_secret_key
+PORT=5000
+```
+
+### 4. Run the project
+
+Backend:
 
 ```bash
 npm run dev
 ```
 
-> Make sure to configure your `.env` file before running the application.
+Frontend:
 
-## 📌 Status
+```bash
+npm start
+```
 
-This project is currently under development and new features will be added over time.
+## 🚀 Deployment
+
+* **Frontend:** Deployed on **Vercel**
+* **Backend:** Deployed on **Vercel**
+* **Database:** **MongoDB Atlas**
+
+## 📌 Project Status
+
+✅ Completed core features with full-stack integration.
+
+Future improvements may include:
+
+* Team collaboration
+* File uploads
+* Notifications
+* Dashboard analytics
 
 ## 👨‍💻 Author
 
