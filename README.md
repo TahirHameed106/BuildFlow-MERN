@@ -1,123 +1,195 @@
 # 🚀 BuildFlow MERN
 
-BuildFlow is a full-stack project management application built with the **MERN Stack**. It helps users create and manage projects, organize tasks, and collaborate through a clean and responsive interface.
+BuildFlow is a full-stack **Project Management and Team Collaboration Platform** built with the **MERN Stack**. It combines project management, AI-powered productivity tools, document storage, and communication features into a single modern dashboard.
 
 ## 🌐 Live Demo
 
-* **Frontend:** https://build-flow-mern.vercel.app/login
-* **Backend API:** https://build-flow-mern-backend-19c1869df-leclercs-projects-6739f3e2.vercel.app/
+- **Frontend:** https://build-flow-mern.vercel.app/login
+- **Backend API:** https://build-flow-mern-backend.vercel.app/
+
+---
 
 ## ✨ Features
 
-* User Authentication (Register & Login)
-* Create, Update, and Delete Projects
-* Task Management
-* Secure REST API
-* Responsive Design
-* MongoDB Atlas Database Integration
+### 🔐 Authentication
+- Secure User Registration & Login
+- JWT Authentication
+- Role-based access (Manager & User)
+
+### 📋 Task Tracker
+- Create Tasks
+- Delete Tasks
+- Organize tasks by:
+  - Pending
+  - In Progress
+  - Completed
+
+### 🤖 AI Document Generator
+Generate professional documents instantly using **Google Gemini AI**.
+
+Supported document types include:
+- Leave Requests
+- Formal Letters
+- Reports
+- Custom Documents
+
+Export generated documents as **PDF**.
+
+### 📝 AI Meeting Summarizer
+- Paste meeting notes
+- Generate concise AI-powered summaries
+- Extract key action items
+
+### 📧 Email Sender
+- Send emails directly from the dashboard
+- Custom recipient, subject, and message
+
+### 📁 Document Management
+- Upload files
+- View stored documents
+- Delete documents
+- Manager document repository
+
+### 🚨 Request Management
+- View and manage user requests
+- Dashboard notification count
+
+### 📱 Responsive Design
+- Desktop
+- Tablet
+- Mobile Friendly
+
+---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-
-* React
-* React Router
-* Axios
-* CSS
+- React
+- React Router
+- Axios
+- CSS
 
 ### Backend
+- Node.js
+- Express.js
+- MongoDB Atlas
+- Mongoose
+- JWT Authentication
+- Google Gemini API
+- Nodemailer
 
-* Node.js
-* Express.js
-* MongoDB Atlas
-* Mongoose
-* JWT Authentication
+### Database
+- MongoDB Atlas
 
 ### Deployment
+- Frontend: Vercel
+- Backend: Vercel
 
-* Frontend: Vercel
-* Backend: Vercel
-* Database: MongoDB Atlas
+---
 
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```text
 BuildFlow-MERN/
-├── client/      # React Frontend
-├── server/      # Express Backend
+├── client/
+├── server/
 └── README.md
 ```
 
-## ⚙️ Getting Started
+---
 
-### 1. Clone the repository
+## ⚙️ Installation
+
+### Clone Repository
 
 ```bash
 git clone https://github.com/TahirHameed106/BuildFlow-MERN.git
 cd BuildFlow-MERN
 ```
 
-### 2. Install dependencies
+### Install Dependencies
 
-Frontend:
+Frontend
 
 ```bash
 cd client
 npm install
 ```
 
-Backend:
+Backend
 
 ```bash
 cd ../server
 npm install
 ```
 
-### 3. Configure Environment Variables
+### Environment Variables
 
-Create a `.env` file inside the server folder and add your MongoDB Atlas connection string and JWT secret.
-
-Example:
+Create a `.env` file inside the `server` folder.
 
 ```env
-MONGODB_URI=your_mongodb_atlas_connection_string
-JWT_SECRET=your_secret_key
 PORT=5000
+
+MONGODB_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_jwt_secret
+
+GEMINI_API_KEY=your_google_gemini_api_key
+
+EMAIL_USER=your_email
+
+EMAIL_PASS=your_email_password
 ```
 
-### 4. Run the project
+---
 
-Backend:
+## 🚀 Running the Application
+
+Backend
 
 ```bash
 npm run dev
 ```
 
-Frontend:
+Frontend
 
 ```bash
 npm start
 ```
 
-## 🚀 Deployment
+---
 
-* **Frontend:** Deployed on **Vercel**
-* **Backend:** Deployed on **Vercel**
-* **Database:** **MongoDB Atlas**
+## 📸 Features Overview
 
-## 📌 Project Status
+- 🔐 Authentication
+- 📋 Task Tracker
+- 🤖 AI Document Generator
+- 📝 AI Meeting Summarizer
+- 📧 Email Sender
+- 📁 Document Management
+- 🚨 Request Management
+- 📱 Responsive Dashboard
 
-✅ Completed core features with full-stack integration.
+---
 
-Future improvements may include:
+## 🔮 Future Enhancements
 
-* Team collaboration
-* File uploads
-* Notifications
-* Dashboard analytics
+- Team collaboration workspace
+- Calendar integration
+- Task deadlines & reminders
+- Real-time notifications
+- AI task prioritization
+- Dashboard analytics
+- Activity history
+
+---
 
 ## 👨‍💻 Author
 
 **Tahir Hameed**
 
 GitHub: https://github.com/TahirHameed106
+
+---
+
+⭐ If you found this project helpful, consider giving it a star!
